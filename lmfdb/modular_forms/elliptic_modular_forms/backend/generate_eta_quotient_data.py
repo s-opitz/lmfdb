@@ -3,7 +3,7 @@ from dirichlet_conrey import DirichletGroup_conrey
 #import pymongo
 # from lmfdb.website import dbport
 from sage.all import ZZ, QQ
-from lmfdb.modular_forms.elliptic_modular_forms.backend.web_modforms import WebModFormSpace
+#from lmfdb.modular_forms.elliptic_modular_forms.backend.web_modforms import WebModFormSpace
 import itertools
 
 def generate_eta_quotient_data(maxN=100, maxk=12, maxr=40):
@@ -24,7 +24,7 @@ def generate_eta_quotient_data(maxN=100, maxk=12, maxr=40):
                         pro = prod([deltas[j]**rdeltas[j] for j in range(0,delta_n)])
                         A1 = Integer(pro.denominator()*pro.numerator()).squarefree_part()
                         # print "pro", pro, "A1", A1
-                        As = [delta for delta in deltas if delta >= A1]
+                        As = [delta for delta in deltas if (Integer(delta)/ A1).is_square()]
                         #print pro, A1, As, N
                         for A in As:
                             try:
