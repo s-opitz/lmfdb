@@ -47,12 +47,15 @@ def generate_eta_quotient_data(maxN=100, maxk=12, maxr=None, minN=1):
                                         #prec = W.sturm_bound()
                                         if k in data[N].keys():
                                             if conrey_n in data[N][k].keys():
-                                                data[N][k][conrey_n].append([deltas, rdeltas, eta_q])
+                                                #data[N][k][conrey_n].append([deltas, rdeltas, eta_q])
+                                                data[N][k][conrey_n].append((deltas, rdeltas))
                                             else:
-                                                data[N][k][conrey_n] = [[deltas, rdeltas, eta_q]]
+                                                #data[N][k][conrey_n] = [[deltas, rdeltas, eta_q]]
+                                                data[N][k][conrey_n] = [(deltas, rdeltas)]
                                         else:
                                             data[N][k] = dict()
-                                            data[N][k][conrey_n] = [[deltas, rdeltas, eta_q]]
+                                            #data[N][k][conrey_n] = [[deltas, rdeltas, eta_q]]
+                                            data[N][k][conrey_n] = [(deltas, rdeltas)]
                                             #print eta_q, chi
     return data
 
@@ -103,10 +106,91 @@ def eta_quotient(arguments=None,exponents=None,prec=100,ret=0):
     res = R(1)
     prefak = 0
     for i in range(len(arguments)):
-        res = res*eta.subs({q:q**arguments[i]})**exponents[i]
+        res = res*eta.subs({q:q**arguments[i]})**exponents[i] + O(q**prec)
         prefak = prefak+arguments[i]*exponents[i]
     r = prefak % 24
     if ret == 1 and r == 0:
-        return res*q**(prefak/24)
+        return res*q**(prefak/24)+O(q**prec)
     else:
-        return res,prefak/24
+        return res + O(q**prec),prefak/24
+
+def eta_quotient_newforms():
+    data = {
+        1: {12: {0: [((1,), (24,))]}},
+        2: {8: {1: [((1, 2), (8, 8))]}},
+        3: {6: {1: [((1, 3), (6, 6))]}},
+        4: {
+            5: {3: [((1, 2, 4), (4, 2, 4))]},
+            6: {1: [((1, 2, 4), (0, 12, 0))]}
+        },
+        5: {4: {1: [((1, 5), (4, 4))]}},
+        6: {4: {1: [((1, 2, 3, 6), (2, 2, 2, 2))]}},
+        7: {3: {6: [((1, 7), (3, 3))]}},
+        8: {
+            3: {3: [((1, 2, 4, 8), (2, 1, 1, 2))]},
+            4: {1: [((1, 2, 4, 8), (0, 4, 4, 0))]}
+        },
+        9: {4: {1: [((1, 3, 9), (0, 8, 0))]}},
+        10: {},
+        11: {2: {1: [((1, 11), (2, 2))]}},
+        12: {3: {5: [((1, 2, 3, 4, 6, 12), (0, 3, 0, 0, 3, 0))]}},
+        13: {},
+        14: {2: {1: [((1, 2, 7, 14), (1, 1, 1, 1))]}},
+        15: {2: {1: [((1, 3, 5, 15), (1, 1, 1, 1))]}},
+        16: {
+            3: {15: [((1, 2, 4, 8, 16), (0, 0, 6, 0, 0))]},
+            4: {1: [((1, 2, 4, 8, 16), (0, -4, 16, -4, 0))]},
+            6: {1: [((1, 2, 4, 8, 16), (0, -12, 36, -12, 0))]} # Entered by hand
+        },
+        17: {},
+        18: {},
+        19: {},
+        20: {2: {1: [((1, 2, 4, 5, 10, 20), (0, 2, 0, 0, 2, 0))]}},
+        21: {},
+        22: {},
+        23: {},
+        24: {2: {1: [((1, 2, 3, 4, 6, 8, 12, 24), (0, 1, 0, 1, 1, 0, 1, 0))]}},
+        25: {},
+        26: {},
+        27: {2: {1: [((1, 3, 9, 27), (0, 2, 2, 0))]}},
+        28: {},
+        29: {},
+        30: {},
+        31: {},
+        32: {
+            2: {1: [((1, 2, 4, 8, 16, 32), (0, 0, 2, 2, 0, 0))]},
+            3: {15: [((1, 2, 4, 8, 16, 32), (0, -2, 5, 5, -2, 0))]}
+        },
+        33: {},
+        34: {},
+        35: {},
+        36: {2: {1: [((1, 2, 3, 4, 6, 9, 12, 18, 36), (0, 0, 0, 0, 4, 0, 0, 0, 0))]}},
+        37: {},
+        38: {},
+        39: {}
+    }
+    return data
+
+def check_eta_quotient_newforms():
+    data = eta_quotient_newforms()
+    for N in data.keys():
+        for k in data[N].keys():
+            for conrey_n in data[N][k].keys():
+                for eta_qs in data[N][k][conrey_n]:
+                    arguments = eta_qs[0]
+                    exponents = eta_qs[1]
+                    Dc = DirichletGroup_conrey(N)
+                    conrey_nn, conrey_c, dirich_n, dirich_c = eta_quotient_conrey_number(N, k, arguments, exponents)
+                    orbit_conrey_n = [Dc.from_sage_character(d).number() for d in dirich_c.galois_orbit()]
+                    NF = Newforms(dirich_c, k, base_ring=None, names='x')
+                    b = False
+                    eta_q = eta_quotient(arguments, exponents, prec = 10, ret = 1)
+                    for nf in NF:
+                        #print nf, nf.base_ring()
+                        if nf.base_ring() == QQ:
+                            nf_q = nf.q_expansion(prec=10)
+                            print "\n", nf_q, "\n", eta_q, "\n"
+                            if eta_q == nf_q:
+                                b = True
+                    print N, k, conrey_n, orbit_conrey_n, arguments, exponents, conrey_n == conrey_nn, b#, eta_q
+                    
